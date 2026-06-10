@@ -1,0 +1,73 @@
+@page "/configuracoes/alterar-regime"
+@inject HttpClient Http
+@inject NavigationManager Nav
+
+<div class="page-title">
+    <span><i class="bi bi-arrow-repeat me-2"></i>Alterar Regime</span>
+</div>
+
+@if (error != null)
+{
+    <div class="alert alert-danger">@error</div>
+}
+
+@if (success != null)
+{
+    <div class="alert alert-success">@success</div>
+}
+
+<div class="card">
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-12">
+                <label class="form-label">Regime</label>
+                <select @bind="regime" class="form-select">
+                    <option value="">Seleccione um regime</option>
+                    <option value="Simplified">Simplificado</option>
+                    <option value="General">Geral</option>
+                    <option value="Exempt">Isento</option>
+                </select>
+            </div>
+            <div class="col-12 d-flex gap-2">
+                <button class="btn btn-primary" @onclick="Save" disabled="@saving">
+                    @if (saving)
+                    {
+                        <span class="spinner-border spinner-border-sm me-1"></span>
+                    }
+                    <i class="bi bi-save me-1"></i>Guardar
+                </button>
+                <a href="/" class="btn btn-outline-secondary"><i class="bi bi-x me-1"></i>Cancelar</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private string? error;
+    private string? success;
+    private string regime = string.Empty;
+    private bool saving;
+
+    private async Task Save()
+    {
+        saving = true;
+        error = null;
+        success = null;
+        try
+        {
+            var response = await Http.PutAsJsonAsync("configuracoes/regime", new { regime });
+            if (response.IsSuccessStatusCode)
+                success = "Regime alterado com sucesso.";
+            else
+                error = await response.Content.ReadAsStringAsync();
+        }
+        catch (Exception ex)
+        {
+            error = $"Erro ao alterar regime: {ex.Message}";
+        }
+        finally
+        {
+            saving = false;
+        }
+    }
+}

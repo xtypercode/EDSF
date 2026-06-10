@@ -1,0 +1,142 @@
+@page "/servicos/faturas/{Id:int}"
+@inject HttpClient Http
+@inject NavigationManager Navigation
+
+<div class="page-title">
+    <span><i class="bi bi-info-circle me-2"></i>Detalhe: @entity?.Number</span>
+</div>
+
+@if (error != null)
+{
+    <div class="alert alert-danger">@error</div>
+}
+
+@if (entity == null)
+{
+    <div class="text-center py-5">
+        <div class="spinner-border text-primary" role="status"></div>
+        <p class="mt-2 text-muted small">A carregar...</p>
+    </div>
+}
+else
+{
+    <div class="d-flex gap-2 mb-3">
+        <button class="btn btn-outline-secondary" @onclick='() => Navigation.NavigateTo("/faturas")'>
+            <i class="bi bi-arrow-left me-1"></i>Voltar
+        </button>
+        <button class="btn btn-primary" @onclick='() => Navigation.NavigateTo($"/faturas/{Id}/editar")'>
+            <i class="bi bi-pencil me-1"></i>Editar
+        </button>
+    </div>
+
+    <div class="card">
+        <div class="card-header"><i class="bi bi-info-circle me-1"></i>Informação Geral</div>
+        <div class="card-body">
+            <dl class="row mb-0">
+                <dt class="col-sm-4">Número</dt>
+                <dd class="col-sm-8">@entity.Number</dd>
+                <dt class="col-sm-4">Tipo Documento</dt>
+                <dd class="col-sm-8">@entity.DocumentType</dd>
+                <dt class="col-sm-4">Série</dt>
+                <dd class="col-sm-8">@entity.Series</dd>
+                <dt class="col-sm-4">Moeda</dt>
+                <dd class="col-sm-8">@entity.Currency</dd>
+                <dt class="col-sm-4">Câmbio</dt>
+                <dd class="col-sm-8">@entity.ExchangeRate.ToString("F6")</dd>
+                <dt class="col-sm-4">Cliente</dt>
+                <dd class="col-sm-8">@(entity.Customer?.Name ?? entity.CustomerId.ToString())</dd>
+                <dt class="col-sm-4">Data</dt>
+                <dd class="col-sm-8">@entity.Date.ToShortDateString()</dd>
+                <dt class="col-sm-4">Vencimento</dt>
+                <dd class="col-sm-8">@entity.DueDate?.ToShortDateString()</dd>
+                <dt class="col-sm-4">Estado</dt>
+                <dd class="col-sm-8">@entity.Status</dd>
+            </dl>
+        </div>
+    </div>
+
+    <div class="card mt-3">
+        <div class="card-header"><i class="bi bi-list me-1"></i>Linhas</div>
+        <div class="card-body p-0">
+            <table class="table table-sm mb-0">
+                <thead>
+                    <tr>
+                        <th>Descrição</th>
+                        <th>Código</th>
+                        <th class="text-end">Qtd</th>
+                        <th class="text-end">Preço</th>
+                        <th class="text-end">Desc.</th>
+                        <th class="text-end">Base</th>
+                        <th class="text-end">IVA</th>
+                        <th>Taxa</th>
+                        <th>Isenção</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var line in entity.Lines)
+                    {
+                        <tr>
+                            <td>@line.Description</td>
+                            <td>@line.ProductCode</td>
+                            <td class="text-end">@line.Quantity</td>
+                            <td class="text-end">@line.UnitPrice.ToString("N2")</td>
+                            <td class="text-end">@line.Discount.ToString("N2")</td>
+                            <td class="text-end">@line.TaxBase.ToString("N2")</td>
+                            <td class="text-end">@line.TaxAmount.ToString("N2")</td>
+                            <td>@GetTaxLabel(line.TaxRate)</td>
+                            <td>@line.ExemptionReason</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="card mt-3">
+        <div class="card-header"><i class="bi bi-calculator me-1"></i>Totais Fiscais</div>
+        <div class="card-body">
+            <dl class="row mb-0">
+                <dt class="col-sm-4">Base Tributável</dt>
+                <dd class="col-sm-8">@entity.TaxBase.ToString("N2")</dd>
+                <dt class="col-sm-4">IVA</dt>
+                <dd class="col-sm-8">@entity.TaxAmount.ToString("N2")</dd>
+                <dt class="col-sm-4">Imposto Selo</dt>
+                <dd class="col-sm-8">@entity.StampTax.ToString("N2")</dd>
+                <dt class="col-sm-4">Retenção na Fonte</dt>
+                <dd class="col-sm-8">-@entity.WithholdingTax.ToString("N2")</dd>
+                <dt class="col-sm-4">Desconto</dt>
+                <dd class="col-sm-8">@entity.DiscountAmount.ToString("N2")</dd>
+                <dt class="col-sm-4 fw-bold">Total</dt>
+                <dd class="col-sm-8 fw-bold">@entity.TotalAmount.ToString("N2")</dd>
+                <dt class="col-sm-4">Notas</dt>
+                <dd class="col-sm-8">@entity.Notes</dd>
+                <dt class="col-sm-4">Criado em</dt>
+                <dd class="col-sm-8">@entity.CreatedAt.ToShortDateString()</dd>
+            </dl>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public int Id { get; set; }
+    private Invoice? entity;
+    private string? error;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            entity = await Http.GetFromJsonAsync<Invoice>($"servicos/faturas/{Id}");
+        }
+        catch (Exception ex) { error = $"Erro: {ex.Message}"; }
+    }
+
+    private string GetTaxLabel(Core.Enums.IvaRate rate) => rate switch
+    {
+        Core.Enums.IvaRate.Standard => "14%",
+        Core.Enums.IvaRate.Reduced => "5%",
+        Core.Enums.IvaRate.Exempt => "Isento",
+        Core.Enums.IvaRate.OutsideScope => "Fora âmbito",
+        _ => rate.ToString()
+    };
+}

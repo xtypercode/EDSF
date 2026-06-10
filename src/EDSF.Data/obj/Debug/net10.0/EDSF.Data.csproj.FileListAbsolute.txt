@@ -1,0 +1,15 @@
+C:\Users\user\Documents\Coding\EDSF\src\EDSF.Data\bin\Debug\net10.0\EDSF.Data.deps.json
+C:\Users\user\Documents\Coding\EDSF\src\EDSF.Data\bin\Debug\net10.0\EDSF.Data.dll
+C:\Users\user\Documents\Coding\EDSF\src\EDSF.Data\bin\Debug\net10.0\EDSF.Data.pdb
+C:\Users\user\Documents\Coding\EDSF\src\EDSF.Data\bin\Debug\net10.0\EDSF.Core.dll
+C:\Users\user\Documents\Coding\EDSF\src\EDSF.Data\bin\Debug\net10.0\EDSF.Core.pdb
+C:\Users\user\Documents\Coding\EDSF\src\EDSF.Data\obj\Debug\net10.0\EDSF.Data.csproj.AssemblyReference.cache
+C:\Users\user\Documents\Coding\EDSF\src\EDSF.Data\obj\Debug\net10.0\EDSF.Data.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\user\Documents\Coding\EDSF\src\EDSF.Data\obj\Debug\net10.0\EDSF.Data.AssemblyInfoInputs.cache
+C:\Users\user\Documents\Coding\EDSF\src\EDSF.Data\obj\Debug\net10.0\EDSF.Data.AssemblyInfo.cs
+C:\Users\user\Documents\Coding\EDSF\src\EDSF.Data\obj\Debug\net10.0\EDSF.Data.csproj.CoreCompileInputs.cache
+C:\Users\user\Documents\Coding\EDSF\src\EDSF.Data\obj\Debug\net10.0\EDSF.Data.csproj.Up2Date
+C:\Users\user\Documents\Coding\EDSF\src\EDSF.Data\obj\Debug\net10.0\EDSF.Data.dll
+C:\Users\user\Documents\Coding\EDSF\src\EDSF.Data\obj\Debug\net10.0\refint\EDSF.Data.dll
+C:\Users\user\Documents\Coding\EDSF\src\EDSF.Data\obj\Debug\net10.0\EDSF.Data.pdb
+C:\Users\user\Documents\Coding\EDSF\src\EDSF.Data\obj\Debug\net10.0\ref\EDSF.Data.dll

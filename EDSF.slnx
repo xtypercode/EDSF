@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/EDSF.Api/EDSF.Api.csproj" />
+    <Project Path="src/EDSF.App/EDSF.App.csproj" />
+    <Project Path="src/EDSF.Core/EDSF.Core.csproj" />
+    <Project Path="src/EDSF.Data/EDSF.Data.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/EDSF.Tests/EDSF.Tests.csproj" />
+  </Folder>
+</Solution>

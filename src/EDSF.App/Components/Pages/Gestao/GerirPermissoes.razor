@@ -1,0 +1,110 @@
+@page "/gestao/permissoes"
+@inject HttpClient Http
+
+<div class="page-title">
+    <span><i class="bi bi-shield-lock me-2"></i>Permissões</span>
+</div>
+
+@if (error != null) { <div class="alert alert-danger">@error</div> }
+
+<div class="filter-bar">
+    <span class="text-muted small fw-semibold"><i class="bi bi-funnel me-1"></i>Filtrar:</span>
+    <input @bind="searchTerm" class="form-control form-control-sm" style="width:200px" placeholder="Pesquisar..."
+           @onkeydown="() => Search()" />
+    <button class="btn btn-sm btn-outline-primary" @onclick="Search"><i class="bi bi-search me-1"></i>Filtrar</button>
+    <button class="btn btn-sm btn-outline-secondary" @onclick="ClearSearch"><i class="bi bi-x-lg me-1"></i></button>
+</div>
+
+@if (loading)
+{
+    <div class="text-center py-4">
+        <div class="spinner-border text-primary" role="status"></div>
+        <p class="mt-2 text-muted">A carregar...</p>
+    </div>
+}
+else if (items == null || items.Count == 0)
+{
+    <div class="card">
+        <div class="card-body text-center py-5">
+            <i class="bi bi-inbox display-4 text-muted"></i>
+            <p class="mt-3 text-muted">Nenhum registo encontrado.</p>
+        </div>
+    </div>
+}
+else
+{
+
+<div class="card table-card">
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead><tr><th>Módulo</th><th>Utilizador</th><th>Ler</th><th>Escrever</th><th>Eliminar</th></tr></thead>
+            <tbody>
+                @foreach (var i in items ?? new())
+                {
+                    <tr>
+                        <td>@i.Module</td>
+                        <td>@i.AppUserId</td>
+                        <td><span class="badge @(i.CanRead ? "bg-success" : "bg-danger")">@(i.CanRead ? "Sim" : "Não")</span></td>
+                        <td><span class="badge @(i.CanWrite ? "bg-success" : "bg-danger")">@(i.CanWrite ? "Sim" : "Não")</span></td>
+                        <td><span class="badge @(i.CanDelete ? "bg-success" : "bg-danger")">@(i.CanDelete ? "Sim" : "Não")</span></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@if (totalPages > 1)
+{
+    <nav>
+        <ul class="pagination pagination-sm justify-content-center mt-3">
+            <li class="page-item @(currentPage == 1 ? "disabled" : "")">
+                <button class="page-link" @onclick="() => GoToPage(currentPage - 1)">Anterior</button>
+            </li>
+            @for (int i = 1; i <= totalPages; i++)
+            {
+                <li class="page-item @(i == currentPage ? "active" : "")">
+                    <button class="page-link" @onclick="() => GoToPage(i)">@i</button>
+                </li>
+            }
+            <li class="page-item @(currentPage == totalPages ? "disabled" : "")">
+                <button class="page-link" @onclick="() => GoToPage(currentPage + 1)">Seguinte</button>
+            </li>
+        </ul>
+    </nav>
+}
+
+}
+
+@code {
+    private List<Permission>? items;
+    private string? error;
+    private bool loading = true;
+    private string searchTerm = "";
+    private int currentPage = 1;
+    private int totalPages = 1;
+    private const int PageSize = 10;
+
+    protected override async Task OnInitializedAsync() => await Load();
+
+    private async Task Load()
+    {
+        try
+        {
+            error = null;
+            var url = $"gestao/permissoes?page={currentPage}&pageSize={PageSize}";
+            if (!string.IsNullOrEmpty(searchTerm))
+                url += $"&search={Uri.EscapeDataString(searchTerm)}";
+            var result = await Http.GetFromJsonAsync<PagedResult<Permission>>(url);
+            items = result?.Items;
+            totalPages = result != null ? (int)Math.Ceiling((double)result.Total / PageSize) : 1;
+        }
+        catch (Exception ex) { error = $"Erro: {ex.Message}"; }
+        finally { loading = false; }
+    }
+
+    private async Task Search() { currentPage = 1; await Load(); }
+    private async Task ClearSearch() { searchTerm = ""; currentPage = 1; await Load(); }
+    private async Task GoToPage(int page) { currentPage = page; await Load(); }
+
+}

@@ -1,0 +1,129 @@
+@inject AuthService Auth
+@inject NavigationManager Navigation
+
+<nav class="navbar navbar-expand-lg navbar-dark top-navbar">
+    <div class="container-fluid">
+        <NavLink class="navbar-brand" href="">
+            <i class="bi bi-box-seam me-2"></i>EDSF
+        </NavLink>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item">
+                    <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
+                        <i class="bi bi-house-door me-1"></i>Home
+                    </NavLink>
+                </li>
+
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false"><i class="bi bi-gear me-1"></i>Servicos</a>
+                    <ul class="dropdown-menu">
+                        <li><NavLink class="dropdown-item" href="servicos/clientes"><i class="bi bi-people"></i>Clientes</NavLink></li>
+                        <li><NavLink class="dropdown-item" href="servicos/vendas-faturas"><i class="bi bi-receipt"></i>Vendas de Faturas</NavLink></li>
+                        <li><NavLink class="dropdown-item" href="servicos/orcamentos"><i class="bi bi-file-earmark-text"></i>Orçamentos</NavLink></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><NavLink class="dropdown-item" href="servicos/cadastro-basico"><i class="bi bi-database"></i>Cadastro Basico</NavLink></li>
+                        <li><NavLink class="dropdown-item" href="servicos/relatorio"><i class="bi bi-bar-chart"></i>Relatorio</NavLink></li>
+                    </ul>
+                </li>
+
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false"><i class="bi bi-shop me-1"></i>Armazem</a>
+                    <ul class="dropdown-menu">
+                        <li><NavLink class="dropdown-item" href="armazem/produtos"><i class="bi bi-box"></i>Produtos</NavLink></li>
+                        <li><NavLink class="dropdown-item" href="armazem/itens"><i class="bi bi-boxes"></i>Itens do Armazem</NavLink></li>
+                        <li><NavLink class="dropdown-item" href="armazem/guia-transporte"><i class="bi bi-truck"></i>Guia de Transporte</NavLink></li>
+                        <li><NavLink class="dropdown-item" href="armazem/stock"><i class="bi bi-archive"></i>Stock</NavLink></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><h6 class="dropdown-header"><i class="bi bi-cart me-1"></i>Compras</h6></li>
+                        <li><NavLink class="dropdown-item" href="armazem/fornecedores"><i class="bi bi-truck"></i>Fornecedores</NavLink></li>
+                        <li><NavLink class="dropdown-item" href="armazem/compras"><i class="bi bi-cart-check"></i>Ordens de Compra</NavLink></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><NavLink class="dropdown-item" href="armazem/relatorios"><i class="bi bi-bar-chart"></i>Relatorios</NavLink></li>
+                        <li><NavLink class="dropdown-item" href="armazem/cadastro-basico"><i class="bi bi-database"></i>Cadastro Basico</NavLink></li>
+                    </ul>
+                </li>
+
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false"><i class="bi bi-wallet2 me-1"></i>Tesouraria</a>
+                    <ul class="dropdown-menu">
+                        <li><NavLink class="dropdown-item" href="tesouraria/saft-agt"><i class="bi bi-file-earmark-spreadsheet"></i>SAFT-AGT (Geral)</NavLink></li>
+                        <li><NavLink class="dropdown-item" href="tesouraria/abertura-caixa"><i class="bi bi-cash-stack"></i>Abertura Caixa</NavLink></li>
+                        <li><NavLink class="dropdown-item" href="tesouraria/nota-debito"><i class="bi bi-file-earmark-minus"></i>Nota de Debito</NavLink></li>
+                        <li><NavLink class="dropdown-item" href="tesouraria/nota-credito"><i class="bi bi-file-earmark-plus"></i>Nota de Credito</NavLink></li>
+                        <li><NavLink class="dropdown-item" href="tesouraria/nota-pagamento"><i class="bi bi-credit-card"></i>Nota de Pagamento</NavLink></li>
+                        <li><NavLink class="dropdown-item" href="tesouraria/adiantamento"><i class="bi bi-send"></i>Adiantamento</NavLink></li>
+                        <li><NavLink class="dropdown-item" href="tesouraria/financas"><i class="bi bi-pie-chart"></i>Financas</NavLink></li>
+                        <li><NavLink class="dropdown-item" href="tesouraria/relatorio-estatistico"><i class="bi bi-graph-up"></i>Relatorio Estatistico</NavLink></li>
+                        <li><NavLink class="dropdown-item" href="tesouraria/cadastro-basico"><i class="bi bi-database"></i>Cadastro Basico</NavLink></li>
+                    </ul>
+                </li>
+
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false"><i class="bi bi-calculator me-1"></i>Contabilidade</a>
+                    <ul class="dropdown-menu">
+                        <li><NavLink class="dropdown-item" href="contabilidade/fluxo-caixa"><i class="bi bi-arrow-left-right"></i>Fluxo de Caixa</NavLink></li>
+                        <li><NavLink class="dropdown-item" href="contabilidade/inventarios"><i class="bi bi-clipboard-data"></i>Inventarios</NavLink></li>
+                        <li><NavLink class="dropdown-item" href="contabilidade/relatorio-movimentos"><i class="bi bi-file-earmark-bar-graph"></i>Relatorio de Movimentos</NavLink></li>
+                        <li><NavLink class="dropdown-item" href="contabilidade/relatorio-iva"><i class="bi bi-calculator"></i>Apuramento IVA</NavLink></li>
+                    </ul>
+                </li>
+
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false"><i class="bi bi-people me-1"></i>Gestao</a>
+                    <ul class="dropdown-menu">
+                        <li><h6 class="dropdown-header"><i class="bi bi-person-badge me-1"></i>Utilizadores</h6></li>
+                        <li><NavLink class="dropdown-item" href="gestao/usuarios"><i class="bi bi-person-gear"></i>Gerir Usuario</NavLink></li>
+                        <li><NavLink class="dropdown-item" href="gestao/permissoes"><i class="bi bi-shield-lock"></i>Gerir Permissoes</NavLink></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><h6 class="dropdown-header"><i class="bi bi-person-workspace me-1"></i>Recursos Humanos</h6></li>
+                        <li><NavLink class="dropdown-item" href="gestao/funcionarios"><i class="bi bi-person-badge"></i>Funcionários</NavLink></li>
+                    </ul>
+                </li>
+
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false"><i class="bi bi-gear-wide-connected me-1"></i>Configuracoes</a>
+                    <ul class="dropdown-menu">
+                        <li><NavLink class="dropdown-item" href="configuracoes/ajuda"><i class="bi bi-question-circle"></i>Ajuda</NavLink></li>
+                        <li><NavLink class="dropdown-item" href="configuracoes/dados-empresa"><i class="bi bi-building"></i>Dados da Empresa</NavLink></li>
+                        <li><NavLink class="dropdown-item" href="configuracoes/series-fiscais"><i class="bi bi-layers"></i>Séries Fiscais</NavLink></li>
+                        <li><NavLink class="dropdown-item" href="configuracoes/atualizar-nif"><i class="bi bi-upc-scan"></i>Actualizar NIF</NavLink></li>
+                        <li><NavLink class="dropdown-item" href="configuracoes/alterar-regime"><i class="bi bi-arrow-repeat"></i>Alterar regime</NavLink></li>
+                        <li><NavLink class="dropdown-item" href="configuracoes/copia-seguranca"><i class="bi bi-hdd"></i>Copia de Seguranca</NavLink></li>
+                        <li><NavLink class="dropdown-item" href="configuracoes/auditoria"><i class="bi bi-journal-text"></i>Auditoria</NavLink></li>
+                    </ul>
+                </li>
+
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false"><i class="bi bi-person-circle me-1"></i>Conta</a>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        @if (Auth.IsLoggedIn)
+                        {
+                            <li class="dropdown-item-text small text-muted"><i class="bi bi-person me-1"></i>@Auth.Username</li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><NavLink class="dropdown-item" href="minha-conta/alterar-senha"><i class="bi bi-key"></i>Alterar Senha</NavLink></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><button class="dropdown-item" @onclick="Logout"><i class="bi bi-box-arrow-right me-1"></i>Sair</button></li>
+                        }
+                        else
+                        {
+                            <li><NavLink class="dropdown-item" href="login"><i class="bi bi-box-arrow-in-right me-1"></i>Entrar</NavLink></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><NavLink class="dropdown-item" href="minha-conta/recuperar-senha"><i class="bi bi-unlock"></i>Recuperar Senha</NavLink></li>
+                        }
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+@code {
+    private async Task Logout()
+    {
+        await Auth.LogoutAsync();
+        Navigation.NavigateTo("/login", forceLoad: false);
+    }
+}

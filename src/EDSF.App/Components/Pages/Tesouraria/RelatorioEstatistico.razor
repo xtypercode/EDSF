@@ -1,0 +1,218 @@
+@page "/tesouraria/relatorio-estatistico"
+@inject HttpClient Http
+@inject IJSRuntime JS
+
+<div class="page-title">
+    <span><i class="bi bi-graph-up me-2"></i>Relatório Estatístico</span>
+</div>
+
+@if (error != null)
+{
+    <div class="alert alert-danger">@error</div>
+}
+
+@if (loading)
+{
+    <div class="text-center py-5">
+        <div class="spinner-border text-primary" role="status"></div>
+        <p class="mt-2 text-muted small">A carregar relatório...</p>
+    </div>
+}
+else
+{
+    @if (insightMsg != null)
+    {
+        <div class="insight-card">
+            <i class="bi bi-lightbulb insight-icon"></i>
+            @insightMsg
+        </div>
+    }
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="card kpi-card" style="border-left-color: var(--success);">
+                <div class="card-body d-flex align-items-center gap-3">
+                    <div class="kpi-icon" style="background: var(--success);"><i class="bi bi-arrow-down-circle"></i></div>
+                    <div class="flex-grow-1">
+                        <div class="kpi-value text-success">@receitas.ToString("C")</div>
+                        <div class="kpi-label">Receitas</div>
+                        <div class="kpi-subtitle">@receitasPct.ToString("F1")% do total</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card kpi-card" style="border-left-color: var(--danger);">
+                <div class="card-body d-flex align-items-center gap-3">
+                    <div class="kpi-icon" style="background: var(--danger);"><i class="bi bi-arrow-up-circle"></i></div>
+                    <div class="flex-grow-1">
+                        <div class="kpi-value text-danger">@despesas.ToString("C")</div>
+                        <div class="kpi-label">Despesas</div>
+                        <div class="kpi-subtitle">@despesasPct.ToString("F1")% do total</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card kpi-card" style="border-left-color: var(--info);">
+                <div class="card-body d-flex align-items-center gap-3">
+                    <div class="kpi-icon" style="background: var(--info);"><i class="bi bi-wallet2"></i></div>
+                    <div class="flex-grow-1">
+                        <div class="kpi-value text-info">@saldo.ToString("C")</div>
+                        <div class="kpi-label">Saldo</div>
+                        <div class="kpi-subtitle">
+                            <span class="trend-badge @(saldo >= 0 ? "trend-up" : "trend-down")">
+                                @(saldo >= 0 ? "\u2191" : "\u2193") @margemPct.ToString("F1")%
+                            </span>
+                            margem
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header"><i class="bi bi-pie-chart me-1"></i>Receitas vs Despesas</div>
+                <div class="card-body">
+                    <canvas id="finDoughnutChart" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between">
+                    <span><i class="bi bi-credit-card-2-back me-1"></i>Contas a Pagar</span>
+                    <span class="badge bg-danger">@debitos?.Count ?? 0</span>
+                </div>
+                <div class="card-body">
+                    <p class="display-6 fw-bold text-danger">@contasPagar.ToString("C")</p>
+                    <p class="text-muted small">Total em notas de débito</p>
+                    <div class="table-responsive" style="max-height: 200px;">
+                        <table class="table table-sm table-hover mb-0">
+                            <thead><tr><th>Número</th><th>Valor</th><th>Data</th></tr></thead>
+                            <tbody>
+                                @foreach (var d in (debitos?.OrderByDescending(d => d.Date).Take(5) ?? Enumerable.Empty<DebitNote>()))
+                                {
+                                    <tr>
+                                        <td>@d.Number</td>
+                                        <td>@d.Amount.ToString("C")</td>
+                                        <td>@d.Date.ToShortDateString()</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between">
+                    <span><i class="bi bi-credit-card-2-front me-1"></i>Contas a Receber</span>
+                    <span class="badge bg-success">@creditos?.Count ?? 0</span>
+                </div>
+                <div class="card-body">
+                    <p class="display-6 fw-bold text-success">@contasReceber.ToString("C")</p>
+                    <p class="text-muted small">Total em notas de crédito</p>
+                    <div class="table-responsive" style="max-height: 200px;">
+                        <table class="table table-sm table-hover mb-0">
+                            <thead><tr><th>Número</th><th>Valor</th><th>Data</th></tr></thead>
+                            <tbody>
+                                @foreach (var c in (creditos?.OrderByDescending(c => c.Date).Take(5) ?? Enumerable.Empty<CreditNote>()))
+                                {
+                                    <tr>
+                                        <td>@c.Number</td>
+                                        <td>@c.Amount.ToString("C")</td>
+                                        <td>@c.Date.ToShortDateString()</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private string? error;
+    private bool loading = true;
+    private decimal receitas;
+    private decimal despesas;
+    private decimal saldo;
+    private decimal receitasPct;
+    private decimal despesasPct;
+    private decimal margemPct;
+    private decimal contasPagar;
+    private decimal contasReceber;
+    private List<DebitNote>? debitos;
+    private List<CreditNote>? creditos;
+    private string? insightMsg;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var resumo = await Http.GetFromJsonAsync<ResumoFinanceiroDto>("tesouraria/relatorios/resumo-financeiro");
+            if (resumo != null)
+            {
+                receitas = resumo.receitas;
+                despesas = resumo.despesas;
+                saldo = resumo.saldo;
+                var total = receitas + despesas;
+                receitasPct = total > 0 ? receitas / total * 100 : 0;
+                despesasPct = total > 0 ? despesas / total * 100 : 0;
+                margemPct = despesas > 0 ? (receitas - despesas) / despesas * 100 : 0;
+            }
+
+            var pagar = await Http.GetFromJsonAsync<ContasPagarDto>("tesouraria/relatorios/contas-pagar");
+            if (pagar != null) { contasPagar = pagar.total; debitos = pagar.itens?.ToList() ?? new List<DebitNote>(); }
+
+            var receber = await Http.GetFromJsonAsync<ContasReceberDto>("tesouraria/relatorios/contas-receber");
+            if (receber != null) { contasReceber = receber.total; creditos = receber.itens?.ToList() ?? new List<CreditNote>(); }
+
+            insightMsg = BuildInsight();
+        }
+        catch (Exception ex)
+        {
+            error = $"Erro ao carregar relatório: {ex.Message}";
+        }
+        loading = false;
+    }
+
+    private string? BuildInsight()
+    {
+        var parts = new List<string>();
+        if (saldo > 0)
+            parts.Add($"Saldo positivo de <span class=\"insight-value\">{saldo.ToString("C")}</span> — margem de {margemPct:F1}%");
+        else if (saldo < 0)
+            parts.Add($"Saldo negativo de <span class=\"insight-value\">{saldo.ToString("C")}</span> — despesas superam receitas em {Math.Abs(margemPct):F1}%");
+        else
+            parts.Add("Receitas e despesas equilibradas");
+
+        if (contasPagar > contasReceber)
+            parts.Add($"Contas a pagar (<span class=\"insight-value\">{contasPagar.ToString("C")}</span>) superam contas a receber — risco de liquidez");
+        else if (contasReceber > contasPagar)
+            parts.Add($"Contas a receber (<span class=\"insight-value\">{contasReceber.ToString("C")}</span>) superam contas a pagar — folga financeira");
+
+        return parts.Count > 0 ? string.Join(". ", parts) + "." : null;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        await Task.Delay(100);
+
+        await JS.InvokeVoidAsync("dashboard.createDoughnut", "finDoughnutChart",
+            new[] { "Receitas", "Despesas" },
+            new[] { receitas, despesas });
+    }
+
+    private record ResumoFinanceiroDto(decimal receitas, decimal despesas, decimal saldo);
+    private record ContasPagarDto(decimal total, DebitNote[]? itens);
+    private record ContasReceberDto(decimal total, CreditNote[]? itens);
+}

@@ -1,0 +1,12 @@
+C:\Users\user\.nuget\packages\microsoft.aspnetcore.components.webview\10.0.0\build\..\staticwebassets\blazor.modules.json
+C:\Users\user\.nuget\packages\microsoft.aspnetcore.components.webview\10.0.0\build\..\staticwebassets\blazor.webview.js
+wwwroot\app.css
+wwwroot\index.html
+wwwroot\js\dashboard.js
+wwwroot\lib\bootstrap-icons\bootstrap-icons.css
+wwwroot\lib\bootstrap-icons\fonts\bootstrap-icons.woff
+wwwroot\lib\bootstrap-icons\fonts\bootstrap-icons.woff2
+wwwroot\lib\bootstrap\dist\css\bootstrap.min.css
+wwwroot\lib\bootstrap\dist\css\bootstrap.min.css.map
+wwwroot\lib\bootstrap\dist\js\bootstrap.bundle.min.js
+wwwroot\lib\chart.js\chart.umd.min.js

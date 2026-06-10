@@ -1,0 +1,64 @@
+@page "/armazem/stock/{Id:int}"
+@inject HttpClient Http
+@inject NavigationManager Navigation
+
+<div class="page-title">
+    <span><i class="bi bi-info-circle me-2"></i>Detalhe: Movimento #@Id</span>
+</div>
+
+@if (error != null)
+{
+    <div class="alert alert-danger">@error</div>
+}
+
+@if (entity == null)
+{
+    <div class="text-center py-5">
+        <div class="spinner-border text-primary" role="status"></div>
+        <p class="mt-2 text-muted small">A carregar...</p>
+    </div>
+}
+else
+{
+    <div class="d-flex gap-2 mb-3">
+        <button class="btn btn-outline-secondary" @onclick='() => Navigation.NavigateTo("/stock")'>
+            <i class="bi bi-arrow-left me-1"></i>Voltar
+        </button>
+        <button class="btn btn-primary" @onclick='() => Navigation.NavigateTo($"/stock/{Id}/editar")'>
+            <i class="bi bi-pencil me-1"></i>Editar
+        </button>
+    </div>
+
+    <div class="card">
+        <div class="card-header"><i class="bi bi-info-circle me-1"></i>Informação Geral</div>
+        <div class="card-body">
+            <dl class="row mb-0">
+                <dt class="col-sm-4">Produto</dt>
+                <dd class="col-sm-8">@(entity.Product?.Name ?? entity.ProductId.ToString())</dd>
+                <dt class="col-sm-4">Tipo</dt>
+                <dd class="col-sm-8">@entity.Type</dd>
+                <dt class="col-sm-4">Quantidade</dt>
+                <dd class="col-sm-8">@entity.Quantity</dd>
+                <dt class="col-sm-4">Data</dt>
+                <dd class="col-sm-8">@entity.Date.ToShortDateString()</dd>
+                <dt class="col-sm-4">Notas</dt>
+                <dd class="col-sm-8">@entity.Notes</dd>
+            </dl>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public int Id { get; set; }
+    private StockMovement? entity;
+    private string? error;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            entity = await Http.GetFromJsonAsync<StockMovement>($"armazem/stock/{Id}");
+        }
+        catch (Exception ex) { error = $"Erro: {ex.Message}"; }
+    }
+}

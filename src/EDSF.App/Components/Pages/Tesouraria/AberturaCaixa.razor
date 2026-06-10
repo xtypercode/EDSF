@@ -1,0 +1,45 @@
+@page "/tesouraria/abertura-caixa"
+@inject HttpClient Http
+
+<div class="page-title">
+    <span><i class="bi bi-cash-stack me-2"></i>Abertura de Caixa</span>
+</div>
+
+@if (error != null) { <div class="alert alert-danger">@error</div> }
+
+<div class="card table-card">
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead><tr><th>Abertura</th><th>Saldo Inicial</th><th>Fecho</th><th>Saldo Final</th><th>Estado</th></tr></thead>
+            <tbody>
+                @foreach (var i in items ?? new())
+                {
+                    <tr>
+                        <td>@i.OpeningDate.ToShortDateString()</td>
+                        <td>@i.InitialBalance.ToString("C")</td>
+                        <td>@i.ClosingDate?.ToShortDateString()</td>
+                        <td>@i.FinalBalance?.ToString("C")</td>
+                        <td><span class="badge @(i.IsOpen ? "bg-success" : "bg-secondary")">@(i.IsOpen ? "Aberto" : "Fechado")</span></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@code {
+    private List<CashRegister>? items;
+    private string? error;
+
+    protected override async Task OnInitializedAsync() => await Load();
+    private async Task Load()
+    {
+        try
+        {
+            error = null;
+            var result = await Http.GetFromJsonAsync<PagedResult<CashRegister>>("tesouraria/caixa?pageSize=100");
+            items = result?.Items;
+        }
+        catch (Exception ex) { error = $"Erro: {ex.Message}"; }
+    }
+}

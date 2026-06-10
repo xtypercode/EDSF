@@ -1,0 +1,66 @@
+@page "/clientes/{Id:int}"
+@inject HttpClient Http
+@inject NavigationManager Navigation
+
+<div class="page-title">
+    <span><i class="bi bi-info-circle me-2"></i>Detalhe: @entity?.Name</span>
+</div>
+
+@if (error != null)
+{
+    <div class="alert alert-danger">@error</div>
+}
+
+@if (entity == null)
+{
+    <div class="text-center py-5">
+        <div class="spinner-border text-primary" role="status"></div>
+        <p class="mt-2 text-muted small">A carregar...</p>
+    </div>
+}
+else
+{
+    <div class="d-flex gap-2 mb-3">
+        <button class="btn btn-outline-secondary" @onclick='() => Navigation.NavigateTo("/clientes")'>
+            <i class="bi bi-arrow-left me-1"></i>Voltar
+        </button>
+        <button class="btn btn-primary" @onclick='() => Navigation.NavigateTo($"/clientes/{Id}/editar")'>
+            <i class="bi bi-pencil me-1"></i>Editar
+        </button>
+    </div>
+
+    <div class="card">
+        <div class="card-header"><i class="bi bi-info-circle me-1"></i>Informação Geral</div>
+        <div class="card-body">
+            <dl class="row mb-0">
+                <dt class="col-sm-4">Nome</dt>
+                <dd class="col-sm-8">@entity.Name</dd>
+                <dt class="col-sm-4">NIF</dt>
+                <dd class="col-sm-8">@entity.Nif</dd>
+                <dt class="col-sm-4">Email</dt>
+                <dd class="col-sm-8">@entity.Email</dd>
+                <dt class="col-sm-4">Telefone</dt>
+                <dd class="col-sm-8">@entity.Phone</dd>
+                <dt class="col-sm-4">Morada</dt>
+                <dd class="col-sm-8">@entity.Address</dd>
+                <dt class="col-sm-4">Criado em</dt>
+                <dd class="col-sm-8">@entity.CreatedAt.ToShortDateString()</dd>
+            </dl>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public int Id { get; set; }
+    private Customer? entity;
+    private string? error;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            entity = await Http.GetFromJsonAsync<Customer>($"servicos/clientes/{Id}");
+        }
+        catch (Exception ex) { error = $"Erro: {ex.Message}"; }
+    }
+}

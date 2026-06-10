@@ -1,0 +1,29 @@
+# Agents
+.agents/
+**/.agents/
+
+# IDE
+.vs/
+.vscode/
+.idea/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Build
+bin/
+obj/
+packages/
+*.nupkg
+
+# ASP.NET
+appsettings.Development.json
+
+# OS
+.DS_Store
+Thumbs.db
+
+# .NET
+*.userprefs
+*.secrets

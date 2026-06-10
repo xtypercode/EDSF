@@ -1,0 +1,180 @@
+@page "/servicos/relatorio"
+@inject HttpClient Http
+@inject IJSRuntime JS
+
+<div class="page-title">
+    <span><i class="bi bi-bar-chart me-2"></i>Relatórios</span>
+</div>
+
+@if (error != null)
+{
+    <div class="alert alert-danger">@error</div>
+}
+
+<div class="filter-bar">
+    <span class="text-muted small fw-semibold"><i class="bi bi-calendar3 me-1"></i>Período:</span>
+    <div class="btn-group btn-group-sm">
+        <button class="btn btn-outline-secondary @(periodo == "mes" ? "active" : "")" @onclick="SetMes">Este Mês</button>
+        <button class="btn btn-outline-secondary @(periodo == "trimestre" ? "active" : "")" @onclick="SetTrimestre">Este Trimestre</button>
+        <button class="btn btn-outline-secondary @(periodo == "ano" ? "active" : "")" @onclick="SetAno">Este Ano</button>
+        <button class="btn btn-outline-secondary @(periodo == "tudo" ? "active" : "")" @onclick="SetTudo">Tudo</button>
+    </div>
+</div>
+
+@if (loading)
+{
+    <div class="text-center py-5">
+        <div class="spinner-border text-primary" role="status"></div>
+        <p class="mt-2 text-muted small">A carregar relatórios...</p>
+    </div>
+}
+else
+{
+    @if (insightMsg != null)
+    {
+        <div class="insight-card">
+            <i class="bi bi-lightbulb insight-icon"></i>
+            @insightMsg
+        </div>
+    }
+
+    <div class="row g-2 mb-4">
+        <div class="col-md-6">
+            <div class="card kpi-card" style="border-left-color: var(--success);">
+                <div class="card-body d-flex align-items-center gap-3">
+                    <div class="kpi-icon" style="background: var(--success);"><i class="bi bi-currency-euro"></i></div>
+                    <div class="flex-grow-1">
+                        <div class="kpi-value">@totalMes.ToString("C")</div>
+                        <div class="kpi-label">Faturação</div>
+                        <div class="kpi-subtitle">@mesName @ano</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card kpi-card" style="border-left-color: var(--info);">
+                <div class="card-body d-flex align-items-center gap-3">
+                    <div class="kpi-icon" style="background: var(--info);"><i class="bi bi-receipt"></i></div>
+                    <div class="flex-grow-1">
+                        <div class="kpi-value">@faturasTotal</div>
+                        <div class="kpi-label">Total Faturas</div>
+                        <div class="kpi-subtitle">@(periodo switch { "mes" => "este mês", "trimestre" => "este trimestre", "ano" => "este ano", _ => "todo o período" })</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-2 mb-4">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header"><i class="bi bi-graph-up me-1"></i>Faturação Mensal (6 meses)</div>
+                <div class="card-body">
+                    <canvas id="revenueLineChart" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header"><i class="bi bi-pie-chart me-1"></i>Faturas por Estado</div>
+                <div class="card-body">
+                    <div style="max-height:200px;">
+                        <canvas id="statusDoughnutChart" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private string? error;
+    private bool loading = true;
+    private string periodo = "mes";
+    private decimal totalMes;
+    private int mes;
+    private int ano;
+    private int faturasTotal;
+    private string[]? trendLabels;
+    private decimal[]? trendData;
+    private string[]? statusLabels;
+    private int[]? statusCounts;
+    private string? insightMsg;
+
+    private string mesName => mes switch
+    {
+        1 => "Janeiro", 2 => "Fevereiro", 3 => "Março", 4 => "Abril",
+        5 => "Maio", 6 => "Junho", 7 => "Julho", 8 => "Agosto",
+        9 => "Setembro", 10 => "Outubro", 11 => "Novembro", 12 => "Dezembro",
+        _ => ""
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async void SetPeriodo(string p)
+    {
+        periodo = p;
+        loading = true;
+        StateHasChanged();
+        await LoadData();
+        loading = false;
+        StateHasChanged();
+    }
+    private void SetMes() => SetPeriodo("mes");
+    private void SetTrimestre() => SetPeriodo("trimestre");
+    private void SetAno() => SetPeriodo("ano");
+    private void SetTudo() => SetPeriodo("tudo");
+
+    private async Task LoadData()
+    {
+        try
+        {
+            error = null;
+            var total = await Http.GetFromJsonAsync<TotalMesDto>("servicos/relatorios/total-mes");
+            if (total != null) { totalMes = total.total; mes = total.mes; ano = total.ano; }
+
+            var periodo = await Http.GetFromJsonAsync<FaturasPeriodoDto>("servicos/relatorios/faturas-por-periodo");
+            if (periodo != null) faturasTotal = periodo.total;
+
+            var trend = await Http.GetFromJsonAsync<FaturamentoMensalDto>("servicos/relatorios/faturamento-mensal");
+            if (trend != null) { trendLabels = trend.labels; trendData = trend.data; }
+
+            var status = await Http.GetFromJsonAsync<List<StatusItemDto>>("servicos/relatorios/status-distribution");
+            if (status != null) { statusLabels = status.Select(s => s.status).ToArray(); statusCounts = status.Select(s => s.count).ToArray(); }
+
+            insightMsg = BuildInsight();
+        }
+        catch (Exception ex)
+        {
+            error = $"Erro ao carregar relatórios: {ex.Message}";
+        }
+    }
+
+    private string? BuildInsight()
+    {
+        var parts = new List<string>();
+        if (totalMes > 0 && faturasTotal > 0)
+            parts.Add($"Ticket médio: <span class=\"insight-value\">{String.Format("{0:C}", totalMes / faturasTotal)}</span> por fatura");
+        return parts.Count > 0 ? string.Join(". ", parts) + "." : null;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        await Task.Delay(100);
+
+        if (trendLabels != null && trendData != null)
+            await JS.InvokeVoidAsync("dashboard.createLine", "revenueLineChart", trendLabels, trendData, "Faturação");
+
+        if (statusLabels != null && statusCounts != null)
+            await JS.InvokeVoidAsync("dashboard.createDoughnut", "statusDoughnutChart", statusLabels, statusCounts);
+    }
+
+    private record TotalMesDto(int mes, int ano, decimal total);
+    private record FaturasPeriodoDto(int total);
+    private record FaturamentoMensalDto(string[] labels, decimal[] data);
+    private record StatusItemDto(string status, int count);
+}

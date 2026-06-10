@@ -1,0 +1,6 @@
+@EDSF.Api_HostAddress = http://localhost:5285
+
+GET {{EDSF.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

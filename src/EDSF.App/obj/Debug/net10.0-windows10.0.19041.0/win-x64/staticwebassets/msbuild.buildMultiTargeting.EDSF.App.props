@@ -1,0 +1,3 @@
+﻿<Project>
+  <Import Project="..\build\EDSF.App.props" />
+</Project>

@@ -1,0 +1,83 @@
+@page "/gestao/funcionarios/novo"
+@page "/gestao/funcionarios/{id:int}/editar"
+@inject HttpClient Http
+@inject NavigationManager Nav
+
+<div class="page-title">
+    <span><i class="bi bi-person-badge me-2"></i>@(id == 0 ? "NOVO FUNCIONÁRIO" : "EDITAR FUNCIONÁRIO")</span>
+</div>
+
+@if (error != null) { <div class="alert alert-danger">@error</div> }
+
+<div class="card">
+    <div class="card-body">
+        <form>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label">Nome</label>
+                    <input @bind="item.Name" class="form-control" required />
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Email</label>
+                    <input @bind="item.Email" type="email" class="form-control" />
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Telefone</label>
+                    <input @bind="item.Phone" class="form-control" />
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Cargo</label>
+                    <input @bind="item.Position" class="form-control" />
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Data de Contratação</label>
+                    <input @bind="item.HireDate" type="date" class="form-control" />
+                </div>
+                <div class="col-md-6">
+                    <div class="form-check mt-4">
+                        <input @bind="item.IsActive" type="checkbox" class="form-check-input" id="isActive" />
+                        <label class="form-check-label" for="isActive">Ativo</label>
+                    </div>
+                </div>
+            </div>
+            <div class="d-flex gap-2 mt-4">
+                <button type="submit" class="btn btn-primary" @onclick="Save" disabled="@saving">
+                    @if (saving) { <span class="spinner-border spinner-border-sm me-1" role="status"></span> }
+                    else { <i class="bi bi-check-lg me-1"></i> }
+                    Guardar
+                </button>
+                <a href="gestao/funcionarios" class="btn btn-outline-secondary"><i class="bi bi-x-lg me-1"></i>Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@code {
+    [Parameter] public int id { get; set; }
+    private Employee item = new();
+    private string? error;
+    private bool saving;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (id != 0)
+            try { item = await Http.GetFromJsonAsync<Employee>($"gestao/funcionarios/{id}") ?? new Employee(); } catch (Exception ex) { error = $"Erro: {ex.Message}"; }
+    }
+
+    private async Task Save()
+    {
+        try
+        {
+            saving = true;
+            HttpResponseMessage response;
+            if (id == 0) response = await Http.PostAsJsonAsync("gestao/funcionarios", item);
+            else response = await Http.PutAsJsonAsync($"gestao/funcionarios/{id}", item);
+            if (response.IsSuccessStatusCode)
+                Nav.NavigateTo("gestao/funcionarios");
+            else
+                error = await response.Content.ReadAsStringAsync();
+        }
+        catch (Exception ex) { error = $"Erro: {ex.Message}"; }
+        finally { saving = false; }
+    }
+}

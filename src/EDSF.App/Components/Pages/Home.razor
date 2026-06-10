@@ -1,0 +1,275 @@
+@page "/"
+@inject HttpClient Http
+@inject IJSRuntime JS
+
+<div class="page-title">
+    <span><i class="bi bi-speedometer2 me-2"></i>Dashboard</span>
+    <small class="text-muted fs-6 fw-normal">@DateTime.Now.ToString("MMMM yyyy")</small>
+</div>
+
+@if (dashboardError != null)
+{
+    <div class="alert alert-danger">@dashboardError</div>
+}
+
+@if (loading)
+{
+    <div class="text-center py-5">
+        <div class="spinner-border text-primary" role="status"></div>
+        <p class="mt-2 text-muted small">A carregar...</p>
+    </div>
+}
+else
+{
+    @* ── Insight banner ── *@
+    @if (insightMsg != null)
+    {
+        <div class="insight-card">
+            <i class="bi bi-lightbulb insight-icon"></i>
+            @insightMsg
+        </div>
+    }
+
+    @* ── Executive KPIs ── *@
+    <div class="row g-2 mb-4">
+        <div class="col-md-4">
+            <div class="card kpi-card" style="border-left-color: var(--success);">
+                <div class="card-body d-flex align-items-center gap-3">
+                    <div class="kpi-icon" style="background: var(--success);"><i class="bi bi-currency-euro"></i></div>
+                    <div class="flex-grow-1">
+                        <div class="kpi-value text-success">@String.Format("{0:C0}", revenueMonth)</div>
+                        <div class="kpi-label">Faturação do Mês</div>
+                        <div class="kpi-subtitle">
+                            <span class="trend-badge @TrendClass(revenueChange)">
+                                @TrendArrow(revenueChange) @Math.Abs(revenueChange).ToString("F1")%
+                            </span>
+                            vs mês anterior
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card kpi-card" style="border-left-color: var(--warning);">
+                <div class="card-body d-flex align-items-center gap-3">
+                    <div class="kpi-icon" style="background: var(--warning);"><i class="bi bi-clock-history"></i></div>
+                    <div class="flex-grow-1">
+                        <div class="kpi-value text-warning">@pendingInvoices</div>
+                        <div class="kpi-label">Faturas Pendentes</div>
+                        <div class="kpi-subtitle">
+                            <span class="trend-badge @TrendClass(-pendingChange)">
+                                @TrendArrow(-pendingChange) @Math.Abs(pendingChange).ToString("F1")%
+                            </span>
+                            vs mês anterior
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card kpi-card" style="border-left-color: var(--danger);">
+                <div class="card-body d-flex align-items-center gap-3">
+                    <div class="kpi-icon" style="background: var(--danger);"><i class="bi bi-exclamation-triangle"></i></div>
+                    <div class="flex-grow-1">
+                        <div class="kpi-value text-danger">@lowStock</div>
+                        <div class="kpi-label">Stock Crítico</div>
+                        <div class="kpi-subtitle">
+                            <span class="trend-badge @TrendClass(-lowStockChange)">
+                                @TrendArrow(-lowStockChange) @Math.Abs(lowStockChange).ToString("F1")%
+                            </span>
+                            vs mês anterior
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @* ── Charts Row ── *@
+    <div class="row g-2 mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <i class="bi bi-graph-up me-1"></i>Receitas (últimos 6 meses)
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="revenueChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @* ── Business Overview ── *@
+    <div class="section-title"><i class="bi bi-building"></i>Visão Geral do Negócio</div>
+
+    <div class="row g-2 mb-4">
+        <div class="col-md-4">
+            <div class="card text-center py-3">
+                <div class="kpi-value text-primary">@totalCustomers</div>
+                <div class="kpi-label">Clientes</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-center py-3">
+                <div class="kpi-value text-primary">@totalProducts</div>
+                <div class="kpi-label">Produtos</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-center py-3">
+                <div class="kpi-value text-primary">@totalInvoices</div>
+                <div class="kpi-label">Total Faturas</div>
+            </div>
+        </div>
+    </div>
+
+    @* ── Recent Tables ── *@
+    <div class="row g-2">
+        <div class="col-md-12">
+            <div class="card table-card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span><i class="bi bi-receipt me-1"></i>Últimas Faturas</span>
+                    <a href="servicos/vendas-faturas" class="btn btn-sm btn-outline-primary"><i class="bi bi-arrow-right me-1"></i>Ver todas</a>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead><tr><th>Número</th><th>Valor</th><th>Data</th><th>Estado</th></tr></thead>
+                        <tbody>
+                            @foreach (var inv in recentInvoices ?? new())
+                            {
+                                <tr>
+                                    <td>@inv.Number</td>
+                                    <td>@String.Format("{0:C}", inv.TotalAmount)</td>
+                                    <td>@inv.Date.ToShortDateString()</td>
+                                    <td><span class="badge @StatusBadge(inv.Status)">@inv.Status</span></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private bool loading = true;
+
+    private decimal revenueMonth;
+    private decimal revenueChange;
+    private int pendingInvoices;
+    private decimal pendingChange;
+    private int lowStock;
+    private decimal lowStockChange;
+    private int totalCustomers;
+    private int totalProducts;
+    private int totalInvoices;
+    private string? dashboardError;
+    private string? insightMsg;
+
+    private List<string> chartLabels = new();
+    private List<decimal> chartData = new();
+    private List<InvoiceDto>? recentInvoices;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+        loading = false;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+            await RenderCharts();
+    }
+
+    private async Task LoadData()
+    {
+        try
+        {
+            var resumo = await Http.GetFromJsonAsync<ResumoDto>("dashboard/resumo");
+            if (resumo != null)
+            {
+                revenueMonth = resumo.revenueMonth;
+                pendingInvoices = resumo.pendingInvoices;
+                lowStock = resumo.lowStock;
+                totalCustomers = resumo.totalCustomers;
+                totalProducts = resumo.totalProducts;
+                totalInvoices = resumo.totalInvoices;
+
+                revenueChange = resumo.revenueMonthPrev > 0
+                    ? (resumo.revenueMonth - resumo.revenueMonthPrev) / resumo.revenueMonthPrev * 100
+                    : 0;
+                pendingChange = resumo.pendingInvoicesPrev > 0
+                    ? (decimal)(resumo.pendingInvoices - resumo.pendingInvoicesPrev) / resumo.pendingInvoicesPrev * 100
+                    : 0;
+                lowStockChange = resumo.lowStockPrev > 0
+                    ? (decimal)(resumo.lowStock - resumo.lowStockPrev) / resumo.lowStockPrev * 100
+                    : 0;
+            }
+
+            var trend = await Http.GetFromJsonAsync<TrendDto>("dashboard/revenue-trend");
+            if (trend != null)
+            {
+                chartLabels = trend.labels;
+                chartData = trend.data;
+            }
+
+            var recent = await Http.GetFromJsonAsync<RecentDto>("dashboard/recent");
+            if (recent != null)
+            {
+                recentInvoices = recent.Invoices?.ToList() ?? new();
+            }
+
+            insightMsg = BuildInsight();
+        }
+        catch (Exception ex) { dashboardError = $"Erro ao carregar dados: {ex.Message}"; }
+    }
+
+    private string? BuildInsight()
+    {
+        var parts = new List<string>();
+
+        if (revenueChange > 10)
+            parts.Add($"Faturação <span class=\"insight-value\">+{revenueChange:F0}%</span> face ao mês anterior — tendência positiva");
+        else if (revenueChange < -10)
+            parts.Add($"Faturação <span class=\"insight-value\">{revenueChange:F0}%</span> face ao mês anterior — quebra acentuada");
+
+        if (pendingInvoices > 10)
+            parts.Add($"<span class=\"insight-value\">{pendingInvoices}</span> faturas pendentes — necessário follow-up");
+        else if (pendingInvoices == 0)
+            parts.Add("Sem faturas pendentes — fluxo de cobrança regular");
+
+        if (lowStock > 3)
+            parts.Add($"<span class=\"insight-value\">{lowStock}</span> produtos com stock crítico — urge reabastecer");
+        else if (lowStock == 0)
+            parts.Add("Nenhum produto com stock crítico");
+
+        return parts.Count > 0 ? string.Join(". ", parts) + "." : null;
+    }
+
+    private async Task RenderCharts()
+    {
+        if (chartLabels.Count > 0)
+            await JS.InvokeVoidAsync("dashboard.createLine", "revenueChart", chartLabels, chartData.ConvertAll(d => (double)d), "Receitas");
+    }
+
+    private string TrendClass(decimal val) => val > 0 ? "trend-up" : val < 0 ? "trend-down" : "trend-flat";
+    private string TrendArrow(decimal val) => val > 0 ? "\u2191" : val < 0 ? "\u2193" : "\u2192";
+
+    private string StatusBadge(string status) => status switch
+    {
+        "Paid" or "Pago" => "bg-success",
+        "Pending" or "Pendente" => "bg-warning text-dark",
+        "Draft" or "Rascunho" => "bg-secondary",
+        "Cancelled" or "Cancelado" => "bg-danger",
+        _ => "bg-secondary"
+    };
+
+    private record ResumoDto(decimal revenueMonth, decimal revenueMonthPrev, int pendingInvoices, int pendingInvoicesPrev, int lowStock, int lowStockPrev, int totalCustomers, int totalProducts, int totalInvoices);
+    private record TrendDto(List<string> labels, List<decimal> data);
+    private record InvoiceDto(string Number, decimal TotalAmount, DateTime Date, string Status);
+    private record RecentDto(List<InvoiceDto> Invoices);
+}

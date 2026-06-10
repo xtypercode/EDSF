@@ -1,0 +1,68 @@
+@page "/servicos/cadastro-basico"
+@inject HttpClient Http
+
+<div class="page-title">
+    <span><i class="bi bi-database me-2"></i>Cadastro Básico</span>
+</div>
+
+@if (error != null)
+{
+    <div class="alert alert-danger">@error</div>
+}
+
+<div class="row g-3">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body text-center">
+                <i class="bi bi-people display-6 text-primary"></i>
+                <h5 class="mt-2">Clientes</h5>
+                <p class="display-6 fw-bold">@clientesCount</p>
+                <a href="/clientes" class="btn btn-outline-primary"><i class="bi bi-arrow-right me-1"></i>Ver Clientes</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body text-center">
+                <i class="bi bi-wrench display-6 text-success"></i>
+                <h5 class="mt-2">Serviços</h5>
+                <p class="display-6 fw-bold">@servicosCount</p>
+                <a href="/servicos/orcamentos" class="btn btn-outline-success"><i class="bi bi-arrow-right me-1"></i>Ver Serviços</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body text-center">
+                <i class="bi bi-box display-6 text-warning"></i>
+                <h5 class="mt-2">Produtos</h5>
+                <p class="display-6 fw-bold">@produtosCount</p>
+                <a href="/produtos" class="btn btn-outline-warning"><i class="bi bi-arrow-right me-1"></i>Ver Produtos</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private string? error;
+    private int clientesCount;
+    private int servicosCount;
+    private int produtosCount;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var clientes = await Http.GetFromJsonAsync<List<Customer>>("servicos/cadastro/clientes");
+            clientesCount = clientes?.Count ?? 0;
+            var servicos = await Http.GetFromJsonAsync<List<Service>>("servicos/cadastro/servicos");
+            servicosCount = servicos?.Count ?? 0;
+            var produtos = await Http.GetFromJsonAsync<List<Product>>("servicos/cadastro/produtos");
+            produtosCount = produtos?.Count ?? 0;
+        }
+        catch (Exception ex)
+        {
+            error = $"Erro ao carregar dados: {ex.Message}";
+        }
+    }
+}

@@ -1,0 +1,66 @@
+@page "/tesouraria/notas-credito/{id:int}/detalhe"
+@inject HttpClient Http
+@inject NavigationManager Navigation
+
+<div class="page-title">
+    <span><i class="bi bi-info-circle me-2"></i>Detalhe: @entity?.Number</span>
+</div>
+
+@if (error != null)
+{
+    <div class="alert alert-danger">@error</div>
+}
+
+@if (entity == null)
+{
+    <div class="text-center py-5">
+        <div class="spinner-border text-primary" role="status"></div>
+        <p class="mt-2 text-muted small">A carregar...</p>
+    </div>
+}
+else
+{
+    <div class="d-flex gap-2 mb-3">
+        <button class="btn btn-outline-secondary" @onclick='() => Navigation.NavigateTo("/tesouraria/nota-credito")'>
+            <i class="bi bi-arrow-left me-1"></i>Voltar
+        </button>
+        <button class="btn btn-primary" @onclick='() => Navigation.NavigateTo($"/tesouraria/nota-credito/{Id}/editar")'>
+            <i class="bi bi-pencil me-1"></i>Editar
+        </button>
+    </div>
+
+    <div class="card">
+        <div class="card-header"><i class="bi bi-info-circle me-1"></i>Informação Geral</div>
+        <div class="card-body">
+            <dl class="row mb-0">
+                <dt class="col-sm-4">Número</dt>
+                <dd class="col-sm-8">@entity.Number</dd>
+                <dt class="col-sm-4">Cliente</dt>
+                <dd class="col-sm-8">@(entity.Customer?.Name ?? entity.CustomerId.ToString())</dd>
+                <dt class="col-sm-4">Valor</dt>
+                <dd class="col-sm-8">@entity.Amount.ToString("C")</dd>
+                <dt class="col-sm-4">Data</dt>
+                <dd class="col-sm-8">@entity.Date.ToShortDateString()</dd>
+                <dt class="col-sm-4">Motivo</dt>
+                <dd class="col-sm-8">@entity.Reason</dd>
+                <dt class="col-sm-4">Fatura</dt>
+                <dd class="col-sm-8">@(entity.Invoice?.Number ?? entity.InvoiceId?.ToString())</dd>
+            </dl>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public int Id { get; set; }
+    private CreditNote? entity;
+    private string? error;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            entity = await Http.GetFromJsonAsync<CreditNote>($"tesouraria/notas-credito/{Id}");
+        }
+        catch (Exception ex) { error = $"Erro: {ex.Message}"; }
+    }
+}

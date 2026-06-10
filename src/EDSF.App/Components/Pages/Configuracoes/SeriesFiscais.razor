@@ -1,0 +1,176 @@
+@page "/configuracoes/series-fiscais"
+@inject HttpClient Http
+@inject NavigationManager Navigation
+
+<div class="page-title">
+    <span><i class="bi bi-layers me-2"></i>Séries Fiscais</span>
+    <button class="btn btn-primary" @onclick="CriarNova"><i class="bi bi-plus-lg me-1"></i>Nova Série</button>
+</div>
+
+@if (error != null) { <div class="alert alert-danger">@error</div> }
+
+<div class="card">
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead>
+                <tr>
+                    <th>Série</th>
+                    <th>Tipo Documento</th>
+                    <th>Ano</th>
+                    <th class="text-end">Nº Actual</th>
+                    <th>Activa</th>
+                    <th>Criada em</th>
+                    <th class="text-end">Acções</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (series == null || series.Count == 0)
+                {
+                    <tr><td colspan="7" class="text-center text-muted py-3">Nenhuma série encontrada.</td></tr>
+                }
+                else
+                {
+                    @foreach (var s in series)
+                    {
+                        <tr>
+                            <td><strong>@s.Series</strong></td>
+                            <td>@GetDocTypeLabel(s.DocumentType)</td>
+                            <td>@s.FiscalYear</td>
+                            <td class="text-end">@s.CurrentNumber</td>
+                            <td>@(s.IsActive ? "Sim" : "Não")</td>
+                            <td>@s.CreatedAt.ToShortDateString()</td>
+                            <td class="text-end">
+                                @if (!s.IsActive)
+                                {
+                                    <button class="btn btn-sm btn-outline-success" @onclick="() => Activar(s)"><i class="bi bi-check-lg"></i></button>
+                                }
+                                else
+                                {
+                                    <button class="btn btn-sm btn-outline-warning" @onclick="() => Desactivar(s)"><i class="bi bi-pause"></i></button>
+                                }
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@if (showForm)
+{
+    <div class="modal d-block" tabindex="-1" style="background:rgba(0,0,0,.5)">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Nova Série Fiscal</h5>
+                    <button type="button" class="btn-close" @onclick="() => showForm = false"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Série</label>
+                            <input @bind="novaSerie.Series" class="form-control" placeholder="Ex: FT-2026" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Tipo Documento</label>
+                            <select @bind="novaSerie.DocumentType" class="form-select">
+                                <option value="FT">Factura</option>
+                                <option value="FR">Factura Recibo</option>
+                                <option value="FS">Factura Simplificada</option>
+                                <option value="NC">Nota de Crédito</option>
+                                <option value="ND">Nota de Débito</option>
+                                <option value="PF">Pro Forma</option>
+                                <option value="RE">Recibo</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Ano</label>
+                            <input @bind="novaSerie.FiscalYear" type="number" class="form-control" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Nº Inicial</label>
+                            <input @bind="novaSerie.CurrentNumber" type="number" class="form-control" />
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="() => showForm = false">Cancelar</button>
+                    <button type="button" class="btn btn-primary" @onclick="GuardarNova">Criar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<InvoiceSeries>? series;
+    private string? error;
+    private bool showForm;
+    private InvoiceSeries novaSerie = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Load();
+    }
+
+    private async Task Load()
+    {
+        try { series = await Http.GetFromJsonAsync<List<InvoiceSeries>>("configuracoes/series"); } catch { }
+    }
+
+    private void CriarNova()
+    {
+        novaSerie = new InvoiceSeries { FiscalYear = DateTime.UtcNow.Year, CurrentNumber = 1, IsActive = true };
+        showForm = true;
+    }
+
+    private async Task GuardarNova()
+    {
+        try
+        {
+            var response = await Http.PostAsJsonAsync("configuracoes/series", novaSerie);
+            if (response.IsSuccessStatusCode)
+            {
+                showForm = false;
+                await Load();
+            }
+            else
+                error = await response.Content.ReadAsStringAsync();
+        }
+        catch (Exception ex) { error = $"Erro: {ex.Message}"; }
+    }
+
+    private async Task Activar(InvoiceSeries s)
+    {
+        s.IsActive = true;
+        var response = await Http.PutAsJsonAsync($"configuracoes/series/{s.Id}", s);
+        if (response.IsSuccessStatusCode)
+            await Load();
+        else
+            error = await response.Content.ReadAsStringAsync();
+    }
+
+    private async Task Desactivar(InvoiceSeries s)
+    {
+        s.IsActive = false;
+        var response = await Http.PutAsJsonAsync($"configuracoes/series/{s.Id}", s);
+        if (response.IsSuccessStatusCode)
+            await Load();
+        else
+            error = await response.Content.ReadAsStringAsync();
+        await Load();
+    }
+
+    private string GetDocTypeLabel(Core.Enums.DocumentType dt) => dt switch
+    {
+        Core.Enums.DocumentType.FT => "Factura",
+        Core.Enums.DocumentType.FR => "Factura Recibo",
+        Core.Enums.DocumentType.FS => "Factura Simplificada",
+        Core.Enums.DocumentType.NC => "Nota Crédito",
+        Core.Enums.DocumentType.ND => "Nota Débito",
+        Core.Enums.DocumentType.PF => "Pro Forma",
+        Core.Enums.DocumentType.RE => "Recibo",
+        _ => dt.ToString()
+    };
+}

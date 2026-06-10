@@ -1,0 +1,64 @@
+@page "/minha-conta/alterar-senha"
+@inject HttpClient Http
+@inject NavigationManager Nav
+@inject EDSF.App.Services.AuthService Auth
+
+<div class="page-title">
+    <span><i class="bi bi-key me-2"></i>Alterar Palavra-passe</span>
+</div>
+
+@if (error != null) { <div class="alert alert-danger">@error</div> }
+
+<div class="card">
+    <div class="card-body">
+        <form>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label">Palavra-passe Atual</label>
+                    <input type="password" class="form-control" @bind="currentPassword" required />
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Nova Palavra-passe</label>
+                    <input type="password" class="form-control" @bind="newPassword" required />
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Confirmar Nova Palavra-passe</label>
+                    <input type="password" class="form-control" @bind="confirmPassword" required />
+                </div>
+            </div>
+            <div class="d-flex gap-2 mt-4">
+                <button type="submit" class="btn btn-primary" @onclick="Save" disabled="@saving">
+                    @if (saving) { <span class="spinner-border spinner-border-sm me-1" role="status"></span> }
+                    else { <i class="bi bi-check-lg me-1"></i> }
+                    Alterar
+                </button>
+                <a href="/" class="btn btn-outline-secondary"><i class="bi bi-x-lg me-1"></i>Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@code {
+    private string? currentPassword;
+    private string? newPassword;
+    private string? confirmPassword;
+    private string? error;
+    private bool saving;
+
+    private async Task Save()
+    {
+        try
+        {
+            saving = true;
+            error = null;
+            if (newPassword != confirmPassword) { error = "As palavras-passe não coincidem."; return; }
+            var response = await Http.PutAsJsonAsync("minha-conta/senha/alterar", new { Username = Auth.Username ?? "", CurrentPassword = currentPassword, NewPassword = newPassword });
+            if (response.IsSuccessStatusCode)
+                Nav.NavigateTo("/");
+            else
+                error = await response.Content.ReadAsStringAsync();
+        }
+        catch (Exception ex) { error = $"Erro: {ex.Message}"; }
+        finally { saving = false; }
+    }
+}

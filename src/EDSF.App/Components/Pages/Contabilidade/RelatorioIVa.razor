@@ -1,0 +1,169 @@
+@page "/contabilidade/relatorio-iva"
+@inject HttpClient Http
+@inject NavigationManager Navigation
+
+<div class="page-title">
+    <span><i class="bi bi-calculator me-2"></i>Apuramento de IVA</span>
+</div>
+
+@if (error != null) { <div class="alert alert-danger">@error</div> }
+@if (invoices == null)
+{
+    <div class="text-center py-5">
+        <div class="spinner-border text-primary" role="status"></div>
+        <p class="mt-2 text-muted small">A calcular...</p>
+    </div>
+}
+else
+{
+    <div class="row mb-3">
+        <div class="col-md-4">
+            <label class="form-label">Mês</label>
+            <select @bind="mes" class="form-select">
+                @foreach (var m in Enumerable.Range(1, 12))
+                {
+                    <option value="@m">@(new DateTime(2000, m, 1).ToString("MMMM"))</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">Ano</label>
+            <select @bind="ano" class="form-select">
+                @foreach (var y in Enumerable.Range(2024, 5).Reverse())
+                {
+                    <option value="@y">@y</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-4 d-flex align-items-end">
+            <button class="btn btn-primary" @onclick="LoadData"><i class="bi bi-search me-1"></i>Filtrar</button>
+        </div>
+    </div>
+
+    <div class="card mb-3">
+        <div class="card-header"><i class="bi bi-box-arrow-in-right me-1"></i>IVA Liquidado (Débito)</div>
+        <div class="card-body p-0">
+            <table class="table table-sm mb-0">
+                <thead>
+                    <tr>
+                        <th>Taxa</th>
+                        <th class="text-end">Base</th>
+                        <th class="text-end">IVA</th>
+                        <th class="text-end">Qtd Facturas</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var r in ResumoPorTaxa)
+                    {
+                        <tr>
+                            <td>@GetTaxLabel(r.Taxa)</td>
+                            <td class="text-end">@r.Base.ToString("N2")</td>
+                            <td class="text-end">@r.Iva.ToString("N2")</td>
+                            <td class="text-end">@r.Qtd</td>
+                        </tr>
+                    }
+                </tbody>
+                <tfoot>
+                    <tr class="fw-bold">
+                        <td>Total</td>
+                        <td class="text-end">@ResumoPorTaxa.Sum(r => r.Base).ToString("N2")</td>
+                        <td class="text-end">@ResumoPorTaxa.Sum(r => r.Iva).ToString("N2")</td>
+                        <td class="text-end">@ResumoPorTaxa.Sum(r => r.Qtd)</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+
+    <div class="card mb-3">
+        <div class="card-header"><i class="bi bi-file-text me-1"></i>Facturas do Período</div>
+        <div class="card-body p-0">
+            <table class="table table-sm mb-0">
+                <thead>
+                    <tr>
+                        <th>Número</th>
+                        <th>Data</th>
+                        <th>Cliente</th>
+                        <th class="text-end">Base</th>
+                        <th class="text-end">IVA</th>
+                        <th class="text-end">Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var inv in invoices)
+                    {
+                        <tr class="cursor-pointer" @onclick="@(() => Navigation.NavigateTo($"/servicos/faturas/{inv.Id}"))">
+                            <td>@inv.Number</td>
+                            <td>@inv.Date.ToShortDateString()</td>
+                            <td>@inv.Customer?.Name</td>
+                            <td class="text-end">@inv.TaxBase.ToString("N2")</td>
+                            <td class="text-end">@inv.TaxAmount.ToString("N2")</td>
+                            <td class="text-end">@inv.TotalAmount.ToString("N2")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
+
+@code {
+    private int mes = DateTime.UtcNow.Month;
+    private int ano = DateTime.UtcNow.Year;
+    private List<Invoice>? invoices;
+    private string? error;
+
+    private List<IvaResumo> ResumoPorTaxa
+    {
+        get
+        {
+            if (invoices == null) return new();
+            return invoices
+                .SelectMany(i => i.Lines)
+                .GroupBy(l => l.TaxRate)
+                .Select(g => new IvaResumo
+                {
+                    Taxa = g.Key,
+                    Base = g.Sum(l => l.TaxBase),
+                    Iva = g.Sum(l => l.TaxAmount),
+                    Qtd = g.Count()
+                })
+                .OrderByDescending(r => r.Base)
+                .ToList();
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        try
+        {
+            error = null;
+            invoices = await Http.GetFromJsonAsync<List<Invoice>>(
+                $"servicos/faturas/periodo?ano={ano}&mes={mes}");
+            if (invoices == null) invoices = new();
+        }
+        catch (Exception ex) { error = $"Erro: {ex.Message}"; invoices = new(); }
+    }
+
+    private string GetTaxLabel(Core.Enums.IvaRate rate) => rate switch
+    {
+        Core.Enums.IvaRate.Standard => "14%",
+        Core.Enums.IvaRate.Reduced => "5%",
+        Core.Enums.IvaRate.Exempt => "Isento",
+        Core.Enums.IvaRate.OutsideScope => "Fora âmbito",
+        _ => rate.ToString()
+    };
+
+    private class IvaResumo
+    {
+        public Core.Enums.IvaRate Taxa { get; set; }
+        public decimal Base { get; set; }
+        public decimal Iva { get; set; }
+        public int Qtd { get; set; }
+    }
+}

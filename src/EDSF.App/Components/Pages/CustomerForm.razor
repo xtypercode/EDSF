@@ -1,0 +1,145 @@
+@page "/clientes/novo"
+@page "/clientes/{id:int}/editar"
+@inject HttpClient Http
+@inject NavigationManager Nav
+
+<div class="page-title">
+    <span><i class="bi bi-people me-2"></i>@(id == 0 ? "NOVO CLIENTE" : "EDITAR CLIENTE")</span>
+</div>
+
+@if (error != null) { <div class="alert alert-danger">@error</div> }
+
+<div class="card">
+    <div class="card-body">
+        <form>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label">Nome <span class="text-danger">*</span></label>
+                    <input @bind="item.Name" class="form-control" required />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Tipo</label>
+                    <select @bind="item.CustomerType" class="form-select">
+                        <option value="Company">Empresa</option>
+                        <option value="Individual">Particular</option>
+                        <option value="Foreign">Estrangeiro</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">NIF</label>
+                    <input @bind="item.Nif" @oninput="ValidarNif" class="form-control @nifClass" />
+                    @if (!string.IsNullOrEmpty(nifError)) { <div class="text-danger small">@nifError</div> }
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Email</label>
+                    <input @bind="item.Email" type="email" class="form-control" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Telefone</label>
+                    <input @bind="item.Phone" class="form-control" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Limite Crédito</label>
+                    <input @bind="item.CreditLimit" type="number" step="0.01" class="form-control" />
+                </div>
+                <div class="col-md-12">
+                    <label class="form-label">Morada</label>
+                    <input @bind="item.Address" class="form-control" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Província</label>
+                    <select @bind="item.Province" class="form-select">
+                        <option value="">-</option>
+                        <option value="Bengo">Bengo</option>
+                        <option value="Benguela">Benguela</option>
+                        <option value="Bie">Bié</option>
+                        <option value="Cabinda">Cabinda</option>
+                        <option value="CuandoCubango">Cuando Cubango</option>
+                        <option value="CuanzaNorte">Cuanza Norte</option>
+                        <option value="CuanzaSul">Cuanza Sul</option>
+                        <option value="Cunene">Cunene</option>
+                        <option value="Huambo">Huambo</option>
+                        <option value="Huila">Huíla</option>
+                        <option value="Luanda">Luanda</option>
+                        <option value="LundaNorte">Lunda Norte</option>
+                        <option value="LundaSul">Lunda Sul</option>
+                        <option value="Malanje">Malanje</option>
+                        <option value="Moxico">Moxico</option>
+                        <option value="Namibe">Namibe</option>
+                        <option value="Uige">Uíge</option>
+                        <option value="Zaire">Zaire</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Município</label>
+                    <input @bind="item.Municipality" class="form-control" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Comuna</label>
+                    <input @bind="item.Commune" class="form-control" />
+                </div>
+            </div>
+            <div class="d-flex gap-2 mt-4">
+                <button type="submit" class="btn btn-primary" @onclick="Save" disabled="@saving">
+                    @if (saving) { <span class="spinner-border spinner-border-sm me-1" role="status"></span> }
+                    else { <i class="bi bi-check-lg me-1"></i> }
+                    Guardar
+                </button>
+                <a href="clientes" class="btn btn-outline-secondary"><i class="bi bi-x-lg me-1"></i>Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@code {
+    [Parameter] public int id { get; set; }
+    private Customer item = new();
+    private string? error;
+    private bool saving;
+    private string? nifError;
+    private string nifClass = "";
+
+    private void ValidarNif(ChangeEventArgs e)
+    {
+        var nif = e.Value?.ToString();
+        if (string.IsNullOrWhiteSpace(nif))
+        {
+            nifError = null;
+            nifClass = "";
+            return;
+        }
+        if (Core.Services.NifValidator.IsValid(nif))
+        {
+            nifError = null;
+            nifClass = "is-valid";
+        }
+        else
+        {
+            nifError = "NIF inválido (módulo 11)";
+            nifClass = "is-invalid";
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (id != 0)
+            try { item = await Http.GetFromJsonAsync<Customer>($"servicos/clientes/{id}") ?? new Customer(); } catch (Exception ex) { error = $"Erro: {ex.Message}"; }
+    }
+
+    private async Task Save()
+    {
+        try
+        {
+            saving = true;
+            HttpResponseMessage response;
+            if (id == 0) response = await Http.PostAsJsonAsync("servicos/clientes", item);
+            else response = await Http.PutAsJsonAsync($"servicos/clientes/{id}", item);
+            if (response.IsSuccessStatusCode)
+                Nav.NavigateTo("clientes");
+            else
+                error = await response.Content.ReadAsStringAsync();
+        }
+        catch (Exception ex) { error = $"Erro: {ex.Message}"; }
+        finally { saving = false; }
+    }
+}

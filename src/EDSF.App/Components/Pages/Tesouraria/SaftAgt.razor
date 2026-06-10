@@ -1,0 +1,109 @@
+@page "/tesouraria/saft-agt"
+@inject HttpClient Http
+@inject IJSRuntime JsRuntime
+
+<div class="page-title">
+    <span><i class="bi bi-file-earmark-spreadsheet me-2"></i>SAFT - AGT</span>
+</div>
+
+@if (error != null) { <div class="alert alert-danger">@error</div> }
+@if (success != null) { <div class="alert alert-success">@success</div> }
+
+<div class="card">
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label class="form-label">Ano Fiscal</label>
+                <select @bind="fiscalYear" class="form-select">
+                    @foreach (var y in Enumerable.Range(2024, 5).Reverse())
+                    {
+                        <option value="@y">@y</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-6 d-flex align-items-end">
+                <button class="btn btn-primary" @onclick="ExportarAno" disabled="@loading">
+                    @if (loading) { <span class="spinner-border spinner-border-sm me-1" role="status"></span> }
+                    else { <i class="bi bi-download me-1"></i> }
+                    Exportar SAF-T Anual
+                </button>
+            </div>
+        </div>
+        <hr />
+        <div class="row g-3">
+            <div class="col-md-4">
+                <label class="form-label">Data Início</label>
+                <input @bind="dataInicio" type="date" class="form-control" />
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Data Fim</label>
+                <input @bind="dataFim" type="date" class="form-control" />
+            </div>
+            <div class="col-md-4 d-flex align-items-end">
+                <button class="btn btn-outline-primary" @onclick="ExportarPeriodo" disabled="@loading">
+                    @if (loading) { <span class="spinner-border spinner-border-sm me-1" role="status"></span> }
+                    else { <i class="bi bi-download me-1"></i> }
+                    Exportar Período
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private int fiscalYear = DateTime.UtcNow.Year;
+    private DateTime dataInicio = new(DateTime.UtcNow.Year, 1, 1);
+    private DateTime dataFim = DateTime.UtcNow;
+    private string? error;
+    private string? success;
+    private bool loading;
+
+    private async Task ExportarAno()
+    {
+        try
+        {
+            loading = true;
+            error = null;
+            success = null;
+            var response = await Http.PostAsync($"tesouraria/saft/exportar?fiscalYear={fiscalYear}", null);
+            if (response.IsSuccessStatusCode)
+            {
+                var bytes = await response.Content.ReadAsByteArrayAsync();
+                var base64 = Convert.ToBase64String(bytes);
+                await JsRuntime.InvokeVoidAsync("downloadFile", $"SAFT_{fiscalYear}.xml", base64);
+                success = $"Ficheiro SAFT_{fiscalYear}.xml descarregado.";
+            }
+            else
+            {
+                error = "Erro ao gerar SAF-T.";
+            }
+        }
+        catch (Exception ex) { error = $"Erro: {ex.Message}"; }
+        finally { loading = false; }
+    }
+
+    private async Task ExportarPeriodo()
+    {
+        try
+        {
+            loading = true;
+            error = null;
+            success = null;
+            var response = await Http.PostAsync(
+                $"tesouraria/saft/exportar-periodo?inicio={dataInicio:yyyy-MM-dd}&fim={dataFim:yyyy-MM-dd}", null);
+            if (response.IsSuccessStatusCode)
+            {
+                var bytes = await response.Content.ReadAsByteArrayAsync();
+                var base64 = Convert.ToBase64String(bytes);
+                await JsRuntime.InvokeVoidAsync("downloadFile", $"SAFT_{dataInicio:yyyyMMdd}-{dataFim:yyyyMMdd}.xml", base64);
+                success = "Ficheiro SAF-T descarregado.";
+            }
+            else
+            {
+                error = "Erro ao gerar SAF-T.";
+            }
+        }
+        catch (Exception ex) { error = $"Erro: {ex.Message}"; }
+        finally { loading = false; }
+    }
+}

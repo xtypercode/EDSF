@@ -1,0 +1,43 @@
+@implements IDisposable
+
+<div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 9999">
+    @if (!string.IsNullOrEmpty(_message))
+    {
+        <div class="toast show align-items-center text-bg-@_type border-0" role="alert">
+            <div class="d-flex">
+                <div class="toast-body">@_message</div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" @onclick="Hide"></button>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private string? _message;
+    private string _type = "success";
+    private Timer? _timer;
+    private bool _disposed;
+
+    protected override void OnInitialized()
+    {
+        try { ToastService.Instance.OnShow += Show; } catch { }
+    }
+
+    public void Show(string msg, string type)
+    {
+        _message = msg;
+        _type = type;
+        _timer?.Dispose();
+        _timer = new Timer(_ => { if (!_disposed) { _message = null; try { InvokeAsync(StateHasChanged); } catch { } } }, null, 4000, Timeout.Infinite);
+        try { InvokeAsync(StateHasChanged); } catch { }
+    }
+
+    public void Hide() { _message = null; try { InvokeAsync(StateHasChanged); } catch { } }
+
+    public void Dispose()
+    {
+        _disposed = true;
+        _timer?.Dispose();
+        try { ToastService.Instance.OnShow -= Show; } catch { }
+    }
+}

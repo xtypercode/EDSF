@@ -1,0 +1,76 @@
+@page "/minha-conta/recuperar-senha"
+@inject HttpClient Http
+@inject NavigationManager Nav
+
+<div class="page-title">
+    <span><i class="bi bi-unlock me-2"></i>Recuperar Senha</span>
+</div>
+
+@if (error != null)
+{
+    <div class="alert alert-danger">@error</div>
+}
+
+@if (success != null)
+{
+    <div class="alert alert-success">@success</div>
+}
+
+<div class="card">
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-12">
+                <label class="form-label">Email</label>
+                <input @bind="email" type="email" class="form-control" placeholder="Digite o seu email" />
+            </div>
+            <div class="col-12 d-flex gap-2">
+                <button class="btn btn-primary" @onclick="Recuperar" disabled="@loading">
+                    @if (loading)
+                    {
+                        <span class="spinner-border spinner-border-sm me-1"></span>
+                    }
+                    <i class="bi bi-send me-1"></i>Enviar
+                </button>
+                <a href="/" class="btn btn-outline-secondary"><i class="bi bi-x me-1"></i>Cancelar</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private string? error;
+    private string? success;
+    private string email = string.Empty;
+    private bool loading;
+
+    private async Task Recuperar()
+    {
+        loading = true;
+        error = null;
+        success = null;
+        try
+        {
+            var response = await Http.PostAsJsonAsync("minha-conta/senha/recuperar", new { email });
+            if (response.IsSuccessStatusCode)
+            {
+                var result = await response.Content.ReadFromJsonAsync<RecuperarResponse>();
+                success = result?.mensagem ?? "Instruções enviadas para o email.";
+            }
+            else
+            {
+                var msg = await response.Content.ReadAsStringAsync();
+                error = $"Erro: {msg}";
+            }
+        }
+        catch (Exception ex)
+        {
+            error = $"Erro ao recuperar senha: {ex.Message}";
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    private record RecuperarResponse(string mensagem);
+}
